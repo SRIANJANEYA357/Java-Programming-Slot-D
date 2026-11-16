@@ -1,11 +1,10 @@
 # PROGRAMMING IN JAVA – ASSIGNMENT 2 (CO2)
 ## Strings, Collections, Generics and Design Challenge
 
-**Student Name:** T. Niranjan Kumar  
-**Register Number:** 192473007  
+**Student Name:** D.Sri Anjaneya  
+**Register Number:** 192425219
 **Java Version:** JDK 8 or later  
-**Required Repository Name:** `CSA09-192473007-Assignment2`  
-**GitHub Link:** To be added after creating the Assignment 2 repository
+
 
 > Important: This report provides the design, implementation, expected outputs and measurement procedure. Run every program on your own laptop and replace the measurement placeholders with your actual results. Do not submit machine timings as your own unless you executed them.
 
