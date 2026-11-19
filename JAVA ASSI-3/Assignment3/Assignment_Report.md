@@ -1,7 +1,7 @@
 # Programming in Java – Assignment 3 (CO3)
 
-**Student:** T. Niranjan Kumar  
-**Register Number:** 192473007  
+**Student:** D. Sri Anjaneya  
+**Register Number:** 192425219  
 **Partner:** __________________  
 **GitHub:** __________________
 
