@@ -1,0 +1,42 @@
+services:
+  # FoodShare Spring Boot Web Application
+  - type: web
+    name: foodshare-prod-app
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: standard
+    region: oregon
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: 8080
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: foodshare-mysql
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: foodshare-mysql
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: foodshare-mysql
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION_MS
+        value: 86400000
+      - key: CORS_ALLOWED_ORIGINS
+        value: "*"
+      - key: HIBERNATE_DDL_AUTO
+        value: update
+    healthCheckPath: /actuator/health
+
+databases:
+  # Managed Production MySQL Database
+  - name: foodshare-mysql
+    databaseName: foodsharedb
+    user: foodshare_prod
+    plan: standard
+    region: oregon

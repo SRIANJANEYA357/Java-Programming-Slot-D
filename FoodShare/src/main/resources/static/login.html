@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container" style="max-width: 480px; margin-top: 3.5rem; margin-bottom: 3rem;">
+        <div class="card" style="box-shadow: var(--shadow-lg);">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div class="brand-icon" style="margin: 0 auto 0.75rem; width: 48px; height: 48px; font-size: 1.5rem;">🌱</div>
+                <h1 style="font-size: 1.75rem; font-weight: 700;">Welcome Back</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Sign in to manage your listings and requests</p>
+            </div>
+
+            <!-- Quick Demo Credentials Box -->
+            <div style="background: var(--primary-bg); border: 1px dashed var(--primary); padding: 0.85rem; border-radius: var(--radius); margin-bottom: 1.5rem; font-size: 0.85rem;">
+                <div style="font-weight: 700; color: var(--primary-dark); margin-bottom: 0.35rem;">⚡ Demo Login Accounts (Password: password123)</div>
+                <div style="display: flex; flex-direction: column; gap: 0.2rem; color: var(--text-muted);">
+                    <div>• <strong>Provider:</strong> provider@foodshare.com</div>
+                    <div>• <strong>Recipient:</strong> user@foodshare.com</div>
+                    <div>• <strong>Volunteer:</strong> volunteer@foodshare.com</div>
+                </div>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="email" class="form-control" placeholder="name@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" id="login-btn">
+                    Sign In
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+                Don't have an account? <a href="/register.html" style="font-weight: 600;">Register here</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        FoodShare.renderNav('login');
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+
+            const payload = {
+                email: document.getElementById('email').value.trim(),
+                password: document.getElementById('password').value
+            };
+
+            try {
+                const res = await FoodShare.post('/auth/login', payload);
+                FoodShare.saveAuth(res);
+                FoodShare.showToast('Login successful! Redirecting...', 'success');
+
+                setTimeout(() => {
+                    if (res.role === 'ROLE_ADMIN') window.location.href = '/admin-dashboard.html';
+                    else if (res.role === 'ROLE_PROVIDER') window.location.href = '/provider-dashboard.html';
+                    else if (res.role === 'ROLE_VOLUNTEER') window.location.href = '/volunteer-dashboard.html';
+                    else window.location.href = '/user-dashboard.html';
+                }, 800);
+            } catch (err) {
+                FoodShare.showToast(err.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        });
+    </script>
+</body>
+</html>

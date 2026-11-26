@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Settings - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container" style="max-width: 600px; margin-top: 2rem; margin-bottom: 3rem;">
+        <div class="card" style="box-shadow: var(--shadow-lg);">
+            <div class="page-header" style="margin-bottom: 1.5rem;">
+                <div>
+                    <h1 style="font-size: 1.6rem;">My Profile</h1>
+                    <p>View and update your personal and organization contact details.</p>
+                </div>
+            </div>
+
+            <form id="profile-form">
+                <div class="form-group">
+                    <label class="form-label">Email Address (Read-only)</label>
+                    <input type="email" id="prof-email" class="form-control" readonly style="background-color: #f1f5f9; cursor: not-allowed;">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Assigned Role</label>
+                    <input type="text" id="prof-role" class="form-control" readonly style="background-color: #f1f5f9; cursor: not-allowed; font-weight: 700;">
+                </div>
+
+                <div class="form-group" id="prof-org-group" style="display: none;">
+                    <label class="form-label">Organization / Business Name</label>
+                    <input type="text" id="prof-org" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Full Name / Contact Person</label>
+                    <input type="text" id="prof-name" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" id="prof-phone" class="form-control" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" id="prof-city" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input type="text" id="prof-address" class="form-control">
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" id="save-profile-btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        if (!FoodShare.isAuthenticated()) {
+            window.location.href = '/login.html';
+        }
+
+        FoodShare.renderNav('profile');
+
+        async function loadProfile() {
+            try {
+                const profile = await FoodShare.get('/users/profile');
+                document.getElementById('prof-email').value = profile.email;
+                document.getElementById('prof-role').value = profile.role.replace('ROLE_', '');
+                document.getElementById('prof-name').value = profile.fullName;
+                document.getElementById('prof-phone').value = profile.phone;
+                document.getElementById('prof-city').value = profile.city || '';
+                document.getElementById('prof-address').value = profile.address || '';
+
+                if (profile.role === 'ROLE_PROVIDER') {
+                    document.getElementById('prof-org-group').style.display = 'block';
+                    document.getElementById('prof-org').value = profile.organizationName || '';
+                }
+            } catch (err) {
+                console.error(err);
+                FoodShare.showToast(err.message, 'error');
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('save-profile-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            const payload = {
+                fullName: document.getElementById('prof-name').value.trim(),
+                phone: document.getElementById('prof-phone').value.trim(),
+                city: document.getElementById('prof-city').value.trim(),
+                address: document.getElementById('prof-address').value.trim(),
+                organizationName: document.getElementById('prof-org').value.trim()
+            };
+
+            try {
+                const updated = await FoodShare.put('/users/profile', payload);
+                FoodShare.showToast('Profile updated successfully!', 'success');
+                // Update local storage user
+                const u = FoodShare.getUser();
+                if (u) {
+                    u.fullName = updated.fullName;
+                    localStorage.setItem('foodshare_user', JSON.stringify(u));
+                    FoodShare.renderNav('profile');
+                }
+            } catch (err) {
+                FoodShare.showToast(err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+        });
+
+        loadProfile();
+    </script>
+</body>
+</html>

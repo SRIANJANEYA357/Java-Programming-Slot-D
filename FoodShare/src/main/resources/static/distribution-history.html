@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Distribution History & Impact Log - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1>Food Distribution History & Impact Log</h1>
+                <p>Immutable audit trail of all redistributed surplus meals, volunteer deliveries, and offline community camps.</p>
+            </div>
+            <a href="/available-food.html" class="btn btn-outline">Find Current Food</a>
+        </div>
+
+        <!-- Total Impact Summary Banner -->
+        <div class="grid-3" style="margin-bottom: 2rem;">
+            <div class="stat-card">
+                <div class="stat-icon">🍱</div>
+                <div class="stat-info">
+                    <h3 id="stat-history-units">0</h3>
+                    <p>Total Units Successfully Distributed</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📜</div>
+                <div class="stat-info">
+                    <h3 id="stat-history-records">0</h3>
+                    <p>Completed Audit Records</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⛺</div>
+                <div class="stat-info">
+                    <h3 id="stat-history-camps">0</h3>
+                    <p>Community Food Camps</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Record ID</th>
+                            <th>Food Listing</th>
+                            <th>Quantity</th>
+                            <th>Distribution Type</th>
+                            <th>Provider</th>
+                            <th>Recipient / Beneficiaries</th>
+                            <th>Facilitated By</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="distribution-tbody">
+                        <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading distribution log...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        FoodShare.renderNav('history');
+
+        async function loadHistory() {
+            try {
+                const records = await FoodShare.get('/distributions/history');
+                const tbody = document.getElementById('distribution-tbody');
+
+                if (!records || records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No distribution records logged yet.</td></tr>';
+                    return;
+                }
+
+                let totalUnits = 0;
+                let campCount = 0;
+
+                tbody.innerHTML = records.map(r => {
+                    totalUnits += r.quantityDistributed;
+                    if (r.distributionType === 'OFFLINE_CAMP') campCount++;
+
+                    let typeTag = '<span class="tag tag-free">DIRECT PICKUP</span>';
+                    if (r.distributionType === 'VOLUNTEER_DELIVERY') typeTag = '<span class="tag tag-discount">VOLUNTEER DELIVERY</span>';
+                    else if (r.distributionType === 'OFFLINE_CAMP') typeTag = '<span class="tag" style="background:#e0e7ff; color:#3730a3;">OFFLINE CAMP</span>';
+
+                    return `
+                        <tr>
+                            <td>#${r.id}</td>
+                            <td><strong>${FoodShare.escapeHtml(r.listing ? r.listing.title : '')}</strong></td>
+                            <td><strong style="color:var(--primary-dark);">${r.quantityDistributed}</strong> ${FoodShare.escapeHtml(r.listing ? r.listing.unit : '')}</td>
+                            <td>${typeTag}</td>
+                            <td>${FoodShare.escapeHtml(r.provider ? r.provider.fullName : '')}</td>
+                            <td>
+                                ${r.campName ? `<strong>${FoodShare.escapeHtml(r.campName)}</strong> (${FoodShare.escapeHtml(r.campLocation)})` : FoodShare.escapeHtml(r.recipient ? r.recipient.fullName : '')}
+                            </td>
+                            <td>${r.volunteer ? FoodShare.escapeHtml(r.volunteer.fullName) : 'Direct Recipient'}</td>
+                            <td>${FoodShare.formatDate(r.collectedAt)}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                document.getElementById('stat-history-units').textContent = totalUnits;
+                document.getElementById('stat-history-records').textContent = records.length;
+                document.getElementById('stat-history-camps').textContent = campCount;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('distribution-tbody').innerHTML = '<tr><td colspan="8" style="color:var(--danger); text-align:center;">Failed to load distribution history.</td></tr>';
+            }
+        }
+
+        loadHistory();
+    </script>
+</body>
+</html>

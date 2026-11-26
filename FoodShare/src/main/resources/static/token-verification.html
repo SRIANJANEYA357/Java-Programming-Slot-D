@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Verification & Collection - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container" style="max-width: 650px; margin-top: 2rem; margin-bottom: 3rem;">
+        <div class="card" style="box-shadow: var(--shadow-lg);">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div class="brand-icon" style="margin: 0 auto 0.75rem; width: 48px; height: 48px; font-size: 1.5rem;">🔍</div>
+                <h1 style="font-size: 1.75rem; font-weight: 800;">Verify Collection Token</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    For Providers and Volunteers: Verify recipient's token and complete food handover.
+                </p>
+            </div>
+
+            <form id="verify-form" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                <input type="text" id="token-input" class="form-control" placeholder="Enter Token Code (e.g. FS-ABCD-1234)" style="font-family: monospace; font-size: 1.15rem; text-transform: uppercase;" required>
+                <button type="submit" class="btn btn-primary" id="verify-btn" style="white-space: nowrap;">Check Token</button>
+            </form>
+
+            <div id="verification-result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        FoodShare.renderNav('dashboard');
+
+        // Check if token code passed in query
+        const urlParams = new URLSearchParams(window.location.search);
+        const preCode = urlParams.get('code');
+        if (preCode) {
+            document.getElementById('token-input').value = preCode;
+            verifyToken(preCode);
+        }
+
+        document.getElementById('verify-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const code = document.getElementById('token-input').value.trim();
+            if (code) verifyToken(code);
+        });
+
+        async function verifyToken(code) {
+            const btn = document.getElementById('verify-btn');
+            btn.disabled = true;
+            btn.textContent = 'Checking...';
+            const resultBox = document.getElementById('verification-result');
+            resultBox.style.display = 'block';
+            resultBox.innerHTML = '<p style="color: var(--text-muted); text-align: center;">Checking database...</p>';
+
+            try {
+                const res = await FoodShare.post('/tokens/verify', { tokenCode: code.toUpperCase() });
+
+                if (res.valid) {
+                    resultBox.innerHTML = `
+                        <div style="background: var(--primary-bg); border: 2px solid var(--primary); padding: 1.25rem; border-radius: var(--radius); margin-bottom: 1.25rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary-dark); font-weight: 700; margin-bottom: 0.75rem; font-size: 1.1rem;">
+                                <span>✓ Valid Active Token</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.9rem;">
+                                <div>🍲 <strong>Food Item:</strong> ${FoodShare.escapeHtml(res.listingTitle)}</div>
+                                <div>📦 <strong>Approved Handover Qty:</strong> <strong style="color: var(--primary-dark);">${res.quantity} ${FoodShare.escapeHtml(res.unit)}</strong></div>
+                                <div>👤 <strong>Recipient:</strong> ${FoodShare.escapeHtml(res.recipientName)} (${FoodShare.escapeHtml(res.recipientPhone)})</div>
+                                <div>💰 <strong>Collection Payment:</strong> <strong>${res.totalPrice > 0 ? '₹' + res.totalPrice : 'FREE'}</strong></div>
+                                <div>🕒 <strong>Issued On:</strong> ${FoodShare.formatDate(res.generatedAt)}</div>
+                            </div>
+                        </div>
+
+                        <button onclick="confirmCollection('${encodeURIComponent(res.tokenCode || '')}')" class="btn btn-primary btn-lg" style="width: 100%;" id="confirm-handover-btn">
+                            ✓ Confirm Handover & Burn Token
+                        </button>
+                    `;
+                } else {
+                    resultBox.innerHTML = `
+                        <div style="background: var(--danger-subtle); border: 2px solid var(--danger); padding: 1.25rem; border-radius: var(--radius); color: #991b1b;">
+                            <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">✕ Token Invalid or Already Used</div>
+                            <p style="font-size: 0.9rem;">${FoodShare.escapeHtml(res.message)}</p>
+                            ${res.verifiedAt ? `<p style="font-size: 0.85rem; margin-top: 0.5rem;">Previously verified at: <strong>${FoodShare.formatDate(res.verifiedAt)}</strong></p>` : ''}
+                        </div>
+                    `;
+                }
+
+            } catch (err) {
+                resultBox.innerHTML = `
+                    <div style="background: var(--danger-subtle); border: 1px solid var(--danger); padding: 1rem; border-radius: var(--radius); color: var(--danger);">
+                        <strong>Error:</strong> ${FoodShare.escapeHtml(err.message)}
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Check Token';
+            }
+        }
+
+        async function confirmCollection(code) {
+            const btn = document.getElementById('confirm-handover-btn');
+            btn.disabled = true;
+            btn.textContent = 'Confirming in database...';
+
+            try {
+                const res = await FoodShare.post('/tokens/confirm-collection', { tokenCode: code });
+                FoodShare.showToast('Handover confirmed! Collection record created in audit log.', 'success');
+                
+                document.getElementById('verification-result').innerHTML = `
+                    <div style="background: var(--primary-bg); border: 2px solid var(--primary); padding: 1.5rem; border-radius: var(--radius); text-align: center;">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎉</div>
+                        <h2 style="color: var(--primary-dark); margin-bottom: 0.5rem;">Collection Complete!</h2>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
+                            Token <strong>${code}</strong> has been burned and marked as VERIFIED. The handover is logged in the permanent distribution history.
+                        </p>
+                        <a href="/distribution-history.html" class="btn btn-primary">View Distribution Audit Log</a>
+                    </div>
+                `;
+            } catch (err) {
+                FoodShare.showToast(err.message, 'error');
+                btn.disabled = false;
+                btn.textContent = '✓ Confirm Handover & Burn Token';
+            }
+        }
+    </script>
+</body>
+</html>

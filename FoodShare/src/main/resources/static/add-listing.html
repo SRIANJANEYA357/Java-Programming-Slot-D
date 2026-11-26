@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Surplus Food Listing - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container" style="max-width: 800px; margin-top: 2rem; margin-bottom: 3rem;">
+        <div class="card" style="box-shadow: var(--shadow-lg);">
+            <div class="page-header" style="margin-bottom: 1.5rem;">
+                <div>
+                    <h1 style="font-size: 1.6rem;">Publish Surplus Food Listing</h1>
+                    <p>Donate surplus food for free or offer it at a discounted price to cut wastage.</p>
+                </div>
+                <a href="/provider-dashboard.html" class="btn btn-sm btn-secondary">← Back to Dashboard</a>
+            </div>
+
+            <form id="add-listing-form">
+                <div class="form-group">
+                    <label class="form-label">Food Title / Item Name *</label>
+                    <input type="text" id="title" class="form-control" placeholder="e.g. Wedding Buffet Surplus - Veg Biryani & Paneer Curry" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Detailed Description</label>
+                    <textarea id="description" class="form-control" rows="3" placeholder="Describe the food preparation time, storage condition, hygiene measures taken..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <select id="category" class="form-control" required>
+                            <option value="COOKED_MEALS">Cooked Meals / Banquet</option>
+                            <option value="BAKERY">Bakery & Breads</option>
+                            <option value="GROCERY">Dry Grocery & Grains</option>
+                            <option value="PACKAGED">Packaged Food Items</option>
+                            <option value="RAW_VEGETABLES">Raw Fruits & Vegetables</option>
+                            <option value="DAIRY">Dairy & Milk Products</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Food Type *</label>
+                        <select id="foodType" class="form-control" onchange="togglePriceFields()" required>
+                            <option value="FREE_DONATION">Free Donation (100% Free)</option>
+                            <option value="DISCOUNTED_SALE">Discounted Sale (Subsidized Price)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Price fields (only for DISCOUNTED_SALE) -->
+                <div id="price-fields-container" style="display: none; background: #fefce8; border: 1px solid #fef08a; padding: 1rem; border-radius: var(--radius); margin-bottom: 1.25rem;">
+                    <div class="form-row" style="margin-bottom: 0;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Original Price (₹)</label>
+                            <input type="number" id="originalPrice" class="form-control" step="0.01" min="0" placeholder="150.00">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Discounted Price (₹) *</label>
+                            <input type="number" id="discountedPrice" class="form-control" step="0.01" min="0" placeholder="40.00">
+                        </div>
+                    </div>
+                    <div class="form-text" style="color: #854d0e;">
+                        * Note: Recipients will pay this subsidized amount in person upon collection. No online gateway needed.
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Available Quantity *</label>
+                        <input type="number" id="quantity" class="form-control" min="1" placeholder="e.g. 50" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Unit of Measurement *</label>
+                        <select id="unit" class="form-control" required>
+                            <option value="MEALS">Meals / Plates</option>
+                            <option value="KG">Kilograms (KG)</option>
+                            <option value="PACKETS">Packets / Boxes</option>
+                            <option value="LITRES">Litres</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Expiry Date & Time *</label>
+                        <input type="datetime-local" id="expiryTime" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">City *</label>
+                        <input type="text" id="locationCity" class="form-control" placeholder="e.g. Hyderabad" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pickup Address / Venue *</label>
+                        <input type="text" id="locationAddress" class="form-control" placeholder="e.g. Royal Grand Banquet, Ring Road" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Food Image URL (Optional)</label>
+                    <input type="url" id="imageUrl" class="form-control" placeholder="https://example.com/image.jpg">
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="setPresetImg('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80')">Preset: Cooked Meals</button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="setPresetImg('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80')">Preset: Bakery</button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="setPresetImg('https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80')">Preset: Vegetables</button>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <a href="/provider-dashboard.html" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-lg" id="submit-listing-btn">Publish Listing</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        if (!FoodShare.isAuthenticated()) {
+            window.location.href = '/login.html';
+        }
+
+        FoodShare.renderNav('dashboard');
+
+        // Set default expiry time to 12 hours from now
+        const now = new Date();
+        now.setHours(now.getHours() + 12);
+        now.setMinutes(0);
+        document.getElementById('expiryTime').value = now.toISOString().slice(0, 16);
+
+        function togglePriceFields() {
+            const type = document.getElementById('foodType').value;
+            const container = document.getElementById('price-fields-container');
+            container.style.display = type === 'DISCOUNTED_SALE' ? 'block' : 'none';
+        }
+
+        function setPresetImg(url) {
+            document.getElementById('imageUrl').value = url;
+        }
+
+        document.getElementById('add-listing-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-listing-btn');
+            btn.disabled = true;
+            btn.textContent = 'Publishing...';
+
+            const foodType = document.getElementById('foodType').value;
+            const payload = {
+                title: document.getElementById('title').value.trim(),
+                description: document.getElementById('description').value.trim(),
+                category: document.getElementById('category').value,
+                foodType: foodType,
+                originalPrice: foodType === 'DISCOUNTED_SALE' ? parseFloat(document.getElementById('originalPrice').value || 0) : 0,
+                discountedPrice: foodType === 'DISCOUNTED_SALE' ? parseFloat(document.getElementById('discountedPrice').value || 0) : 0,
+                quantity: parseInt(document.getElementById('quantity').value),
+                unit: document.getElementById('unit').value,
+                expiryTime: new Date(document.getElementById('expiryTime').value).toISOString(),
+                locationCity: document.getElementById('locationCity').value.trim(),
+                locationAddress: document.getElementById('locationAddress').value.trim(),
+                imageUrl: document.getElementById('imageUrl').value.trim() || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'
+            };
+
+            try {
+                await FoodShare.post('/listings', payload);
+                FoodShare.showToast('Surplus food listing published successfully!', 'success');
+                setTimeout(() => window.location.href = '/provider-dashboard.html', 1000);
+            } catch (err) {
+                FoodShare.showToast(err.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Publish Listing';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Details & Request - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container" style="max-width: 960px;">
+        <div style="margin-bottom: 1.5rem;">
+            <a href="/available-food.html" class="btn btn-sm btn-secondary">← Back to Available Food</a>
+        </div>
+
+        <div id="details-container">
+            <p style="color: var(--text-muted);">Loading food item details...</p>
+        </div>
+    </div>
+
+    <!-- Request Modal Confirmation -->
+    <div id="request-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Food Request Claim</h3>
+                <button onclick="closeRequestModal()" class="modal-close">&times;</button>
+            </div>
+            <form id="claim-form">
+                <div class="modal-body">
+                    <div style="background: var(--primary-bg); padding: 0.85rem; border-radius: var(--radius); margin-bottom: 1rem;">
+                        <h4 id="modal-food-title" style="color: var(--primary-dark); margin-bottom: 0.25rem;">Food Title</h4>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">
+                            Available: <strong id="modal-remaining-badge">0</strong> units
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Quantity to Request *</label>
+                        <input type="number" id="claim-quantity" class="form-control" min="1" required oninput="calculateTotalCost()">
+                        <div class="form-text" id="max-qty-text">Cannot exceed remaining quantity</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Beneficiary Category (Priority Routing)</label>
+                        <select id="claim-priority-cat" class="form-control">
+                            <option value="REGULAR">Regular Beneficiary / Individual</option>
+                            <option value="CHILDREN">Children Care Home / Orphanage (High Priority)</option>
+                            <option value="ELDERLY">Old Age Home / Senior Citizens (High Priority)</option>
+                        </select>
+                        <div class="form-text">Vulnerable groups are allocated via the PriorityQueue processing pipeline.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pickup Notes / Instructions</label>
+                        <textarea id="claim-notes" class="form-control" rows="2" placeholder="e.g. Bringing personal insulated containers, arriving by 6 PM."></textarea>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600;">Total Payable:</span>
+                        <span id="modal-total-price" style="font-size: 1.25rem; font-weight: 800; color: var(--primary-dark);">FREE</span>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" onclick="closeRequestModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="confirm-claim-btn">Confirm Request & Generate Token</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        FoodShare.renderNav('available');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const foodId = urlParams.get('id');
+        let currentListing = null;
+
+        if (!foodId) {
+            window.location.href = '/available-food.html';
+        }
+
+        async function loadListingDetails() {
+            try {
+                currentListing = await FoodShare.get(`/listings/${foodId}`);
+                const container = document.getElementById('details-container');
+
+                container.innerHTML = `
+                    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 2rem;">
+                        <div class="grid-2" style="gap: 0;">
+                            <div>
+                                <img src="${currentListing.imageUrl ? encodeURI(currentListing.imageUrl) : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'}" alt="${FoodShare.escapeHtml(currentListing.title)}" style="width: 100%; height: 100%; min-height: 320px; object-fit: cover;">
+                            </div>
+                            <div style="padding: 2rem; display: flex; flex-direction: column;">
+                                <div class="food-card-tags" style="margin-bottom: 0.75rem;">
+                                    <span class="tag ${currentListing.foodType === 'FREE_DONATION' ? 'tag-free' : 'tag-discount'}">
+                                        ${currentListing.foodType === 'FREE_DONATION' ? 'FREE DONATION' : 'DISCOUNTED SALE'}
+                                    </span>
+                                    <span class="tag tag-category">${FoodShare.escapeHtml(currentListing.category ? currentListing.category.replace('_', ' ') : '')}</span>
+                                </div>
+
+                                <h1 style="font-size: 1.85rem; font-weight: 800; color: var(--secondary); margin-bottom: 0.75rem;">
+                                    ${FoodShare.escapeHtml(currentListing.title)}
+                                </h1>
+
+                                <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 1.25rem;">
+                                    ${FoodShare.escapeHtml(currentListing.description || 'Fresh surplus food available for community consumption.')}
+                                </p>
+
+                                <div style="background: var(--bg-page); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem;">
+                                    <div>🏢 <strong>Provider:</strong> ${FoodShare.escapeHtml(currentListing.providerName)} (${FoodShare.escapeHtml(currentListing.providerType)})</div>
+                                    <div>📍 <strong>Pickup Address:</strong> ${FoodShare.escapeHtml(currentListing.locationAddress)}, ${FoodShare.escapeHtml(currentListing.locationCity)}</div>
+                                    <div>⏳ <strong>Safe Expiry Window:</strong> ${FoodShare.formatTimeRemaining(currentListing.expiryTime)} (Valid until ${FoodShare.formatDate(currentListing.expiryTime)})</div>
+                                    <div>📦 <strong>Available Quantity:</strong> <span style="font-weight: 700; color: var(--primary-dark); font-size: 1.1rem;">${currentListing.remainingQuantity} ${FoodShare.escapeHtml(currentListing.unit)}</span> (Total listed: ${currentListing.originalQuantity})</div>
+                                </div>
+
+                                <div class="food-footer" style="margin-top: auto; padding-top: 1rem;">
+                                    <div class="food-price">
+                                        ${currentListing.foodType === 'FREE_DONATION' 
+                                            ? '<span class="price-free" style="font-size: 1.5rem;">FREE</span>' 
+                                            : `<span class="price-discounted" style="font-size: 1.5rem;">₹${currentListing.discountedPrice}</span> <span class="price-original">₹${currentListing.originalPrice}</span>`}
+                                    </div>
+
+                                    ${currentListing.remainingQuantity > 0 && !currentListing.expired ? `
+                                        <button onclick="openRequestModal()" class="btn btn-primary btn-lg">Request This Food</button>
+                                    ` : `
+                                        <button disabled class="btn btn-secondary btn-lg">Unavailable / Depleted</button>
+                                    `}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('details-container').innerHTML = '<p style="color: var(--danger);">Failed to load listing details.</p>';
+            }
+        }
+
+        function openRequestModal() {
+            if (!FoodShare.isAuthenticated()) {
+                FoodShare.showToast('Please login to request food items.', 'warning');
+                setTimeout(() => window.location.href = `/login.html?redirect=/food-details.html?id=${foodId}`, 1500);
+                return;
+            }
+
+            document.getElementById('modal-food-title').textContent = currentListing.title;
+            document.getElementById('modal-remaining-badge').textContent = `${currentListing.remainingQuantity} ${currentListing.unit}`;
+            const qtyInput = document.getElementById('claim-quantity');
+            qtyInput.max = currentListing.remainingQuantity;
+            qtyInput.value = 1;
+            document.getElementById('max-qty-text').textContent = `Max available: ${currentListing.remainingQuantity} ${currentListing.unit}`;
+            calculateTotalCost();
+            document.getElementById('request-modal').style.display = 'flex';
+        }
+
+        function closeRequestModal() {
+            document.getElementById('request-modal').style.display = 'none';
+        }
+
+        function calculateTotalCost() {
+            const qty = parseInt(document.getElementById('claim-quantity').value) || 0;
+            const priceEl = document.getElementById('modal-total-price');
+
+            if (currentListing.foodType === 'FREE_DONATION') {
+                priceEl.textContent = 'FREE';
+            } else {
+                const total = (currentListing.discountedPrice * qty).toFixed(2);
+                priceEl.textContent = `₹${total}`;
+            }
+        }
+
+        document.getElementById('claim-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('confirm-claim-btn');
+            btn.disabled = true;
+            btn.textContent = 'Allocating with Concurrency Lock...';
+
+            const qty = parseInt(document.getElementById('claim-quantity').value);
+            const priorityCat = document.getElementById('claim-priority-cat').value;
+            const isPriority = priorityCat === 'CHILDREN' || priorityCat === 'ELDERLY';
+
+            const payload = {
+                listingId: currentListing.id,
+                quantityRequested: qty,
+                isPriority: isPriority,
+                priorityCategory: priorityCat,
+                notes: document.getElementById('claim-notes').value.trim()
+            };
+
+            try {
+                const res = await FoodShare.post('/requests', payload);
+                FoodShare.showToast('Request confirmed! Collection token generated.', 'success');
+                closeRequestModal();
+
+                // Redirect to the collection token page
+                setTimeout(() => {
+                    window.location.href = `/collection-token.html?code=${res.tokenCode}`;
+                }, 1000);
+
+            } catch (err) {
+                FoodShare.showToast(err.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Confirm Request & Generate Token';
+            }
+        });
+
+        loadListingDetails();
+    </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Collection Token - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container" style="max-width: 650px; margin-top: 2rem; margin-bottom: 3rem;">
+        <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between;">
+            <a href="/user-dashboard.html" class="btn btn-sm btn-secondary">← Back to Dashboard</a>
+            <button onclick="window.print()" class="btn btn-sm btn-outline">🖨️ Print Token Slip</button>
+        </div>
+
+        <div id="token-card-wrapper">
+            <p style="color: var(--text-muted); text-align: center;">Loading token details...</p>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        FoodShare.renderNav('dashboard');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenCode = urlParams.get('code');
+
+        if (!tokenCode) {
+            window.location.href = '/user-dashboard.html';
+        }
+
+        async function loadToken() {
+            try {
+                const res = await FoodShare.get(`/tokens/code/${tokenCode}`);
+                const wrapper = document.getElementById('token-card-wrapper');
+
+                let statusBadge = '<span class="badge badge-success">ACTIVE & READY FOR PICKUP</span>';
+                if (res.tokenStatus === 'VERIFIED') statusBadge = '<span class="badge badge-info">ALREADY COLLECTED</span>';
+                else if (res.tokenStatus === 'EXPIRED') statusBadge = '<span class="badge badge-danger">EXPIRED</span>';
+
+                wrapper.innerHTML = `
+                    <div class="card" style="box-shadow: var(--shadow-lg); border-top: 5px solid var(--primary);">
+                        <div style="text-align: center; margin-bottom: 1.5rem;">
+                            <span class="tag tag-free" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Official Handover Pass</span>
+                            <h1 style="font-size: 1.6rem; font-weight: 800; margin-top: 0.5rem;">Food Collection Token</h1>
+                            <div style="margin-top: 0.5rem;">${statusBadge}</div>
+                        </div>
+
+                        <!-- Big Token Code Display -->
+                        <div class="token-box">
+                            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">PRESENT THIS CODE AT PROVIDER PREMISES:</div>
+                            <div class="token-code">${FoodShare.escapeHtml(res.tokenCode)}</div>
+                            <!-- Simulated High-Contrast QR Code Visual -->
+                            <div style="margin: 1rem auto 0; width: 140px; height: 140px; background: white; border: 4px solid var(--primary); padding: 8px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: var(--shadow-sm);">
+                                <div style="font-size: 3.5rem;">📱</div>
+                                <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); font-family: monospace;">${FoodShare.escapeHtml(res.tokenCode)}</div>
+                            </div>
+                        </div>
+
+                        <!-- Collection Details -->
+                        <div style="background: var(--bg-page); padding: 1.25rem; border-radius: var(--radius); margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.95rem;">
+                            <div>🍲 <strong>Food Item:</strong> ${FoodShare.escapeHtml(res.listingTitle)}</div>
+                            <div>📦 <strong>Claimed Quantity:</strong> <span style="font-weight: 700; color: var(--primary-dark);">${res.quantity} ${FoodShare.escapeHtml(res.unit)}</span></div>
+                            <div>🏢 <strong>Provider:</strong> ${FoodShare.escapeHtml(res.providerName)}</div>
+                            <div>👤 <strong>Recipient Name:</strong> ${FoodShare.escapeHtml(res.recipientName)} (${FoodShare.escapeHtml(res.recipientPhone)})</div>
+                            <div>💰 <strong>Total Amount:</strong> <strong style="color: var(--primary-dark);">${res.totalPrice > 0 ? '₹' + res.totalPrice : 'FREE'}</strong></div>
+                            <div>🕒 <strong>Issued On:</strong> ${FoodShare.formatDate(res.generatedAt)}</div>
+                            ${res.verifiedAt ? `<div>✅ <strong>Collected At:</strong> ${FoodShare.formatDate(res.verifiedAt)}</div>` : ''}
+                        </div>
+
+                        <div style="background: #fefce8; border: 1px solid #fef08a; padding: 0.85rem; border-radius: var(--radius); font-size: 0.85rem; color: #854d0e;">
+                            <strong>Instructions for Pickup:</strong>
+                            <ul style="padding-left: 1.2rem; margin-top: 0.35rem;">
+                                <li>Show this 8-character token to the food provider representative.</li>
+                                <li>The provider will enter the code to authenticate and record the handover.</li>
+                                <li>Each token is strictly valid for only ONE collection. Duplicate use is blocked.</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('token-card-wrapper').innerHTML = '<p style="color: var(--danger); text-align: center;">Failed to load token. It may be invalid or expired.</p>';
+            }
+        }
+
+        loadToken();
+    </script>
+</body>
+</html>

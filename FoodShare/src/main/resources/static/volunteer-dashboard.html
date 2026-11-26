@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volunteer Dashboard - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1>Volunteer & Distribution Camp Dashboard</h1>
+                <p>Empowering ground volunteers to coordinate surplus pickup and offline community food camps.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button onclick="openCampModal()" class="btn btn-primary">🎪 Log Offline Food Camp</button>
+                <a href="/token-verification.html" class="btn btn-outline">Verify Recipient Token</a>
+            </div>
+        </div>
+
+        <!-- Metric Stat Cards -->
+        <div class="grid-4" style="margin-bottom: 2rem;">
+            <div class="stat-card">
+                <div class="stat-icon">🚚</div>
+                <div class="stat-info">
+                    <h3 id="stat-vehicle">Two Wheeler</h3>
+                    <p>Vehicle Assigned</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚖️</div>
+                <div class="stat-info">
+                    <h3 id="stat-capacity">50 KG</h3>
+                    <p>Transport Capacity</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎪</div>
+                <div class="stat-info">
+                    <h3 id="stat-camps">4</h3>
+                    <p>Offline Camps Served</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🟢</div>
+                <div class="stat-info">
+                    <h3 id="stat-status">ACTIVE</h3>
+                    <p>Volunteer Status</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Priority Redistribution Queue (DSA Feature Showcase) -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="page-header" style="margin-bottom: 1rem;">
+                <div>
+                    <h2 class="card-title" style="margin-bottom: 0.2rem;">⚡ Priority Distribution Queue (PriorityQueue Algorithm)</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">
+                        Real-time PriorityQueue algorithm prioritizing vulnerable recipients: <strong>CHILDREN (Weight 1) &gt; ELDERLY (Weight 2) &gt; REGULAR (Weight 3)</strong>, with FIFO tie-breaking.
+                    </p>
+                </div>
+                <button onclick="loadPriorityQueue()" class="btn btn-sm btn-secondary">Refresh Queue</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Priority Tier</th>
+                            <th>Recipient</th>
+                            <th>Food Item</th>
+                            <th>Quantity Requested</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="priority-queue-tbody">
+                        <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading prioritized queue...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Available Surplus for Offline Community Camps -->
+        <div class="card">
+            <div class="page-header" style="margin-bottom: 1rem;">
+                <div>
+                    <h2 class="card-title" style="margin-bottom: 0.2rem;">Available Surplus Suitable for Community Camps</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">
+                        High-volume surplus donations available to be claimed for street camps, shelter drives, and slum distribution.
+                    </p>
+                </div>
+                <a href="/distribution-history.html" style="font-size: 0.9rem; font-weight: 600;">View Camp History →</a>
+            </div>
+
+            <div id="camp-listings-grid" class="grid-3">
+                <p style="color: var(--text-muted);">Loading available surplus...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Logging Offline Community Camp -->
+    <div id="camp-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎪 Record Offline Community Distribution Camp</h3>
+                <button onclick="closeCampModal()" class="modal-close">&times;</button>
+            </div>
+            <form id="camp-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Select Surplus Listing</label>
+                        <select id="modal-listing-id" class="form-control" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Quantity to Distribute</label>
+                        <input type="number" id="modal-camp-qty" class="form-control" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Camp / Drive Name</label>
+                        <input type="text" id="modal-camp-name" class="form-control" placeholder="e.g. Hyderabad Railway Station Food Camp" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Camp Location / Area</label>
+                        <input type="text" id="modal-camp-location" class="form-control" placeholder="e.g. Secunderabad Station West Gate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes / Community Beneficiaries</label>
+                        <textarea id="modal-camp-notes" class="form-control" rows="2" placeholder="e.g. Distributed to 40 pavement dwellers and sanitation workers."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeCampModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="camp-submit-btn">Record Distribution</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        if (!FoodShare.isAuthenticated()) {
+            window.location.href = '/login.html';
+        }
+
+        FoodShare.renderNav('dashboard');
+        let availableListings = [];
+
+        async function loadVolunteerProfile() {
+            try {
+                const profile = await FoodShare.get('/volunteers/me').catch(() => null);
+                if (profile) {
+                    document.getElementById('stat-vehicle').textContent = profile.vehicleType.replace('_', ' ');
+                    document.getElementById('stat-capacity').textContent = `${profile.maxCapacityKg} KG`;
+                    document.getElementById('stat-status').textContent = profile.availabilityStatus;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadPriorityQueue() {
+            try {
+                const requests = await FoodShare.get('/requests/prioritized');
+                const tbody = document.getElementById('priority-queue-tbody');
+
+                if (!requests || requests.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No active requests in queue.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = requests.map((r, index) => {
+                    let badgeClass = 'tag-category';
+                    if (r.priorityCategory === 'CHILDREN') badgeClass = 'tag-free';
+                    else if (r.priorityCategory === 'ELDERLY') badgeClass = 'tag-discount';
+
+                    return `
+                        <tr>
+                            <td><strong>#${index + 1}</strong></td>
+                            <td><span class="tag ${badgeClass}">⭐ ${FoodShare.escapeHtml(r.priorityCategory)}</span></td>
+                            <td><strong>${FoodShare.escapeHtml(r.recipient ? r.recipient.fullName : (r.recipientName || ''))}</strong></td>
+                            <td>${FoodShare.escapeHtml(r.listing ? r.listing.title : (r.listingTitle || ''))}</td>
+                            <td><strong>${r.quantityRequested}</strong> ${FoodShare.escapeHtml(r.listing ? r.listing.unit : (r.unit || ''))}</td>
+                            <td><span class="badge badge-success">${FoodShare.escapeHtml(r.requestStatus)}</span></td>
+                            <td>
+                                <a href="/food-details.html?id=${r.listing ? r.listing.id : r.listingId}" class="btn btn-sm btn-outline">Listing Details</a>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('priority-queue-tbody').innerHTML = '<tr><td colspan="7" style="color:var(--danger); text-align:center;">Failed to load prioritized requests.</td></tr>';
+            }
+        }
+
+        async function loadCampSurplus() {
+            try {
+                availableListings = await FoodShare.get('/listings/available');
+                const grid = document.getElementById('camp-listings-grid');
+                const select = document.getElementById('modal-listing-id');
+
+                if (!availableListings || availableListings.length === 0) {
+                    grid.innerHTML = '<p style="color: var(--text-muted); grid-column:1/-1;">No surplus listings currently available.</p>';
+                    return;
+                }
+
+                select.innerHTML = availableListings.map(l => 
+                    `<option value="${l.id}">${FoodShare.escapeHtml(l.title)} (Available: ${l.remainingQuantity} ${FoodShare.escapeHtml(l.unit)})</option>`
+                ).join('');
+
+                grid.innerHTML = availableListings.map(l => `
+                    <div class="card">
+                        <div class="food-card-tags">
+                            <span class="tag ${l.foodType === 'FREE_DONATION' ? 'tag-free' : 'tag-discount'}">${FoodShare.escapeHtml(l.foodType)}</span>
+                            <span class="tag tag-category">${FoodShare.escapeHtml(l.category ? l.category.replace('_', ' ') : '')}</span>
+                        </div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem;">${FoodShare.escapeHtml(l.title)}</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Provider: <strong>${FoodShare.escapeHtml(l.providerName)}</strong></p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">Location: 📍 ${FoodShare.escapeHtml(l.locationCity)} (${FoodShare.escapeHtml(l.locationAddress)})</p>
+                        <div style="background: var(--bg-page); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); margin-bottom: 0.75rem; font-size: 0.85rem;">
+                            Remaining Available: <strong>${l.remainingQuantity} ${FoodShare.escapeHtml(l.unit)}</strong>
+                        </div>
+                        <button onclick="selectForCamp(${l.id})" class="btn btn-primary btn-sm" style="width: 100%;">Dispatch to Offline Camp</button>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function openCampModal() {
+            document.getElementById('camp-modal').style.display = 'flex';
+        }
+
+        function closeCampModal() {
+            document.getElementById('camp-modal').style.display = 'none';
+        }
+
+        function selectForCamp(listingId) {
+            document.getElementById('modal-listing-id').value = listingId;
+            openCampModal();
+        }
+
+        document.getElementById('camp-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('camp-submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Recording...';
+
+            const payload = {
+                listingId: parseInt(document.getElementById('modal-listing-id').value),
+                quantity: parseInt(document.getElementById('modal-camp-qty').value),
+                campName: document.getElementById('modal-camp-name').value.trim(),
+                campLocation: document.getElementById('modal-camp-location').value.trim(),
+                notes: document.getElementById('modal-camp-notes').value.trim()
+            };
+
+            try {
+                await FoodShare.post('/distributions/camp', payload);
+                FoodShare.showToast('Offline Food Distribution Camp successfully recorded!', 'success');
+                closeCampModal();
+                loadCampSurplus();
+                loadPriorityQueue();
+            } catch (err) {
+                FoodShare.showToast(err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Record Distribution';
+            }
+        });
+
+        loadVolunteerProfile();
+        loadPriorityQueue();
+        loadCampSurplus();
+    </script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Available Food - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1>Discover Available Surplus Food</h1>
+                <p>Browse donations and discounted listings in real time. Filter by category, location, or food type.</p>
+            </div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 0.75rem; align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Search Food Name or Description</label>
+                    <input type="text" id="filter-search" class="form-control" placeholder="e.g. Wedding Biryani, Bread, Vegetables...">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Category</label>
+                    <select id="filter-category" class="form-control">
+                        <option value="">All Categories</option>
+                        <option value="COOKED_MEALS">Cooked Meals</option>
+                        <option value="BAKERY">Bakery</option>
+                        <option value="GROCERY">Grocery</option>
+                        <option value="PACKAGED">Packaged</option>
+                        <option value="RAW_VEGETABLES">Vegetables & Fruits</option>
+                        <option value="DAIRY">Dairy</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Food Type</label>
+                    <select id="filter-type" class="form-control">
+                        <option value="">All Types</option>
+                        <option value="FREE_DONATION">Free Donations Only</option>
+                        <option value="DISCOUNTED_SALE">Discounted Sale Only</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">City</label>
+                    <input type="text" id="filter-city" class="form-control" placeholder="e.g. Hyderabad">
+                </div>
+
+                <button onclick="applyFilters()" class="btn btn-primary" style="height: 42px;">Apply Filter</button>
+            </div>
+        </div>
+
+        <!-- Food Listings Grid -->
+        <div id="listings-grid" class="grid-3">
+            <p style="color: var(--text-muted); grid-column: 1/-1;">Loading available food listings...</p>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        FoodShare.renderNav('available');
+
+        async function loadListings(params = {}) {
+            const grid = document.getElementById('listings-grid');
+            grid.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1;">Searching listings...</p>';
+
+            try {
+                const query = new URLSearchParams(params).toString();
+                const listings = await FoodShare.get(`/listings/available?${query}`);
+
+                if (!listings || listings.length === 0) {
+                    grid.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1;">No food listings found matching your criteria. Try loosening filters.</p>';
+                    return;
+                }
+
+                grid.innerHTML = listings.map(f => `
+                    <div class="food-card">
+                        <img src="${f.imageUrl ? encodeURI(f.imageUrl) : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'}" alt="${FoodShare.escapeHtml(f.title)}" class="food-card-img">
+                        <div class="food-card-body">
+                            <div class="food-card-tags">
+                                <span class="tag ${f.foodType === 'FREE_DONATION' ? 'tag-free' : 'tag-discount'}">
+                                    ${f.foodType === 'FREE_DONATION' ? 'FREE DONATION' : 'DISCOUNTED'}
+                                </span>
+                                <span class="tag tag-category">${FoodShare.escapeHtml(f.category ? f.category.replace('_', ' ') : '')}</span>
+                            </div>
+                            <h3 class="food-title">${FoodShare.escapeHtml(f.title)}</h3>
+                            <p class="food-desc">${FoodShare.escapeHtml(f.description || 'Surplus food in safe condition ready for immediate redistribution.')}</p>
+                            
+                            <div class="food-meta">
+                                <div class="food-meta-item">🏢 ${FoodShare.escapeHtml(f.providerName)}</div>
+                                <div class="food-meta-item">📍 ${FoodShare.escapeHtml(f.locationCity)} (${FoodShare.escapeHtml(f.locationAddress)})</div>
+                                <div class="food-meta-item">⏳ ${FoodShare.formatTimeRemaining(f.expiryTime)}</div>
+                                <div class="food-meta-item">
+                                    <span class="qty-badge">Remaining: <strong>${f.remainingQuantity} / ${f.originalQuantity} ${FoodShare.escapeHtml(f.unit)}</strong></span>
+                                </div>
+                            </div>
+
+                            <div class="food-footer">
+                                <div class="food-price">
+                                    ${f.foodType === 'FREE_DONATION' 
+                                        ? '<span class="price-free">FREE</span>' 
+                                        : `<span class="price-discounted">₹${f.discountedPrice}</span><span class="price-original">₹${f.originalPrice}</span>`}
+                                </div>
+                                <a href="/food-details.html?id=${f.id}" class="btn btn-primary btn-sm">Request Food →</a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = '<p style="color: var(--danger); grid-column: 1/-1;">Failed to load listings.</p>';
+            }
+        }
+
+        function applyFilters() {
+            const params = {};
+            const search = document.getElementById('filter-search').value.trim();
+            const category = document.getElementById('filter-category').value;
+            const type = document.getElementById('filter-type').value;
+            const city = document.getElementById('filter-city').value.trim();
+
+            if (search) params.search = search;
+            if (category) params.category = category;
+            if (foodType) params.foodType = type;
+            if (city) params.city = city;
+
+            loadListings(params);
+        }
+
+        // Enter key in search input triggers filter
+        document.getElementById('filter-search').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyFilters();
+        });
+
+        loadListings();
+    </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodShare - Food Wastage Reduction & Redistribution Platform</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <!-- Hero Section -->
+    <section style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 5rem 1.5rem; text-align: center; border-bottom: 1px solid var(--border-color);">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <span class="tag tag-free" style="font-size: 0.85rem; padding: 0.35rem 0.85rem; margin-bottom: 1rem; display: inline-block;">
+                🌱 Sustainable Food Redistribution Network
+            </span>
+            <h1 style="font-size: 3rem; font-weight: 800; color: var(--secondary); margin-bottom: 1.25rem; line-height: 1.2;">
+                Bridging Surplus Food to Those Who Need It Most
+            </h1>
+            <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 2rem;">
+                Connect restaurants, banquet halls, event organizers and citizens with surplus food. Donate for free or offer at discounted rates with verified token distribution.
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="/available-food.html" class="btn btn-primary btn-lg">Browse Available Food</a>
+                <a href="/register.html" class="btn btn-outline btn-lg">Donate or List Surplus</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Metrics Counter -->
+    <div class="container" style="margin-top: -2.5rem;">
+        <div class="grid-4">
+            <div class="stat-card" style="box-shadow: var(--shadow-lg);">
+                <div class="stat-icon">🍲</div>
+                <div class="stat-info">
+                    <h3 id="stat-meals">12,450+</h3>
+                    <p>Meals Redistributed</p>
+                </div>
+            </div>
+            <div class="stat-card" style="box-shadow: var(--shadow-lg);">
+                <div class="stat-icon">🏢</div>
+                <div class="stat-info">
+                    <h3 id="stat-providers">180+</h3>
+                    <p>Registered Providers</p>
+                </div>
+            </div>
+            <div class="stat-card" style="box-shadow: var(--shadow-lg);">
+                <div class="stat-icon">🤝</div>
+                <div class="stat-info">
+                    <h3 id="stat-volunteers">95+</h3>
+                    <p>Active Volunteers</p>
+                </div>
+            </div>
+            <div class="stat-card" style="box-shadow: var(--shadow-lg);">
+                <div class="stat-icon">🌍</div>
+                <div class="stat-info">
+                    <h3 id="stat-co2">5.8 Tons</h3>
+                    <p>CO₂ Footprint Prevented</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <section class="container" style="margin-top: 4rem;">
+        <div style="text-align: center; margin-bottom: 3rem;">
+            <h2 style="font-size: 2.2rem; font-weight: 700; color: var(--secondary);">How FoodShare Works</h2>
+            <p style="color: var(--text-muted);">A simple, transparent 4-step workflow to fight hunger and cut waste</p>
+        </div>
+
+        <div class="grid-4">
+            <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">📢</div>
+                <h3 class="card-title">1. List Surplus</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    Banquets, restaurants and individuals post available food with quantity, unit and expiry hours.
+                </p>
+            </div>
+            <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔍</div>
+                <h3 class="card-title">2. Discover & Claim</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    Shelters and recipients claim items instantly with concurrency-safe quantity checks and priority handling.
+                </p>
+            </div>
+            <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">🎟️</div>
+                <h3 class="card-title">3. Secure Token</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    The system creates a one-time cryptographic collection token ensuring zero unauthorized pickups.
+                </p>
+            </div>
+            <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">🚚</div>
+                <h3 class="card-title">4. Verify & Distribute</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    Providers verify the token on pickup, or volunteers deliver to offline camps with full audit trails.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Latest Available Food Preview -->
+    <section class="container" style="margin-top: 4rem;">
+        <div class="page-header">
+            <div>
+                <h1>Freshly Available Food Listings</h1>
+                <p>Live listings available right now for pickup and redistribution</p>
+            </div>
+            <a href="/available-food.html" class="btn btn-outline">View All Listings →</a>
+        </div>
+
+        <div id="home-food-grid" class="grid-3">
+            <p style="color: var(--text-muted);">Loading active listings...</p>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="brand" style="margin-bottom: 0.75rem;">
+                    <div class="brand-icon">🌱</div>
+                    <span>FoodShare</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    A college project dedicated to combating hunger and reducing food waste through technology.
+                </p>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 0.75rem;">Quick Links</h4>
+                <ul style="list-style: none; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                    <li><a href="/available-food.html">Find Food</a></li>
+                    <li><a href="/distribution-history.html">Impact History</a></li>
+                    <li><a href="/about.html">About Us</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 0.75rem;">Join Us</h4>
+                <ul style="list-style: none; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                    <li><a href="/register.html?role=ROLE_PROVIDER">Donate Food</a></li>
+                    <li><a href="/register.html?role=ROLE_VOLUNTEER">Be a Volunteer</a></li>
+                    <li><a href="/register.html?role=ROLE_RECIPIENT">Recipient Sign Up</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 0.75rem;">Demo Portals</h4>
+                <ul style="list-style: none; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                    <li><a href="/token-verification.html">Token Verification</a></li>
+                    <li><a href="/login.html">Sign In</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 FoodShare Platform. B.Tech Computer Science Final Year Project.
+        </div>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script>
+        FoodShare.renderNav('home');
+
+        async function loadHomeListings() {
+            try {
+                const listings = await FoodShare.get('/listings/available');
+                const grid = document.getElementById('home-food-grid');
+                if (!listings || listings.length === 0) {
+                    grid.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1;">No listings currently available. Check back soon!</p>';
+                    return;
+                }
+
+                grid.innerHTML = listings.slice(0, 3).map(f => `
+                    <div class="food-card">
+                        <img src="${f.imageUrl ? encodeURI(f.imageUrl) : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'}" alt="${FoodShare.escapeHtml(f.title)}" class="food-card-img">
+                        <div class="food-card-body">
+                            <div class="food-card-tags">
+                                <span class="tag ${f.foodType === 'FREE_DONATION' ? 'tag-free' : 'tag-discount'}">
+                                    ${f.foodType === 'FREE_DONATION' ? 'FREE DONATION' : 'DISCOUNTED'}
+                                </span>
+                                <span class="tag tag-category">${FoodShare.escapeHtml(f.category ? f.category.replace('_', ' ') : '')}</span>
+                            </div>
+                            <h3 class="food-title">${FoodShare.escapeHtml(f.title)}</h3>
+                            <p class="food-desc">${FoodShare.escapeHtml(f.description || 'Nutritious surplus food available for redistribution.')}</p>
+                            <div class="food-meta">
+                                <div class="food-meta-item">📍 ${FoodShare.escapeHtml(f.locationCity)} (${FoodShare.escapeHtml(f.locationAddress)})</div>
+                                <div class="food-meta-item">⏳ ${FoodShare.formatTimeRemaining(f.expiryTime)}</div>
+                            </div>
+                            <div class="food-footer">
+                                <div class="food-price">
+                                    ${f.foodType === 'FREE_DONATION' 
+                                        ? '<span class="price-free">FREE</span>' 
+                                        : `<span class="price-discounted">₹${f.discountedPrice}</span><span class="price-original">₹${f.originalPrice}</span>`}
+                                </div>
+                                <a href="/food-details.html?id=${f.id}" class="btn btn-primary btn-sm">Request Food</a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('home-food-grid').innerHTML = '<p style="color: var(--danger);">Failed to load listings.</p>';
+            }
+        }
+
+        loadHomeListings();
+    </script>
+</body>
+</html>

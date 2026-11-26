@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Requests - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1>My Food Requests</h1>
+                <p>Track the lifecycle of your food requests and retrieve pickup tokens.</p>
+            </div>
+            <a href="/available-food.html" class="btn btn-primary">Find More Food</a>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Food Listing</th>
+                            <th>Quantity</th>
+                            <th>Payable Amount</th>
+                            <th>Priority Tier</th>
+                            <th>Status</th>
+                            <th>Token Code</th>
+                            <th>Requested On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="my-requests-tbody">
+                        <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading your requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        if (!FoodShare.isAuthenticated()) {
+            window.location.href = '/login.html';
+        }
+
+        FoodShare.renderNav('dashboard');
+
+        async function loadMyRequests() {
+            try {
+                const requests = await FoodShare.get('/requests/my');
+                const tbody = document.getElementById('my-requests-tbody');
+
+                if (!requests || requests.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">You have not made any food requests yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = requests.map(r => {
+                    let statusBadge = '<span class="badge badge-warning">PENDING</span>';
+                    if (r.requestStatus === 'CONFIRMED') statusBadge = '<span class="badge badge-success">CONFIRMED</span>';
+                    else if (r.requestStatus === 'COLLECTED') statusBadge = '<span class="badge badge-info">COLLECTED</span>';
+                    else if (r.requestStatus === 'CANCELLED') statusBadge = '<span class="badge badge-neutral">CANCELLED</span>';
+
+                    return `
+                        <tr>
+                            <td>
+                                <strong>${FoodShare.escapeHtml(r.listingTitle)}</strong>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">📍 ${FoodShare.escapeHtml(r.locationCity)}</div>
+                            </td>
+                            <td><strong>${r.quantityRequested}</strong> ${FoodShare.escapeHtml(r.unit)}</td>
+                            <td>${FoodShare.formatCurrency(r.totalPrice)}</td>
+                            <td><span class="tag ${r.priorityCategory === 'CHILDREN' || r.priorityCategory === 'ELDERLY' ? 'tag-free' : 'tag-category'}">${FoodShare.escapeHtml(r.priorityCategory)}</span></td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                ${r.tokenCode ? `<a href="/collection-token.html?code=${encodeURIComponent(r.tokenCode)}" style="font-family:monospace; font-weight:700; color:var(--primary-dark);">${FoodShare.escapeHtml(r.tokenCode)}</a>` : '—'}
+                            </td>
+                            <td>${FoodShare.formatDate(r.createdAt)}</td>
+                            <td>
+                                <div style="display: flex; gap: 0.35rem;">
+                                    ${r.tokenCode ? `<a href="/collection-token.html?code=${encodeURIComponent(r.tokenCode)}" class="btn btn-sm btn-outline">Token</a>` : ''}
+                                    ${r.requestStatus === 'CONFIRMED' ? `<button onclick="cancelRequest(${r.id})" class="btn btn-sm btn-danger">Cancel</button>` : ''}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error(err);
+                FoodShare.showToast(err.message, 'error');
+            }
+        }
+
+        async function cancelRequest(id) {
+            if (!confirm('Are you sure you want to cancel this request? The quantity will be restored to the provider.')) return;
+            try {
+                await FoodShare.delete(`/requests/${id}`);
+                FoodShare.showToast('Request cancelled. Inventory restored.', 'success');
+                loadMyRequests();
+            } catch (err) {
+                FoodShare.showToast(err.message, 'error');
+            }
+        }
+
+        loadMyRequests();
+    </script>
+</body>
+</html>

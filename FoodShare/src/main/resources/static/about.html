@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container" style="max-width: 900px;">
+        <div class="page-header" style="text-align: center; display: block; margin-top: 2rem;">
+            <span class="tag tag-free" style="padding: 0.35rem 0.8rem; margin-bottom: 0.75rem;">Our Mission</span>
+            <h1>Zero Food Waste. Zero Hunger.</h1>
+            <p style="font-size: 1.1rem; max-width: 700px; margin: 0.5rem auto 0;">
+                FoodShare empowers communities, caterers, banquet organizers and restaurants to redistribute high-quality surplus food transparently.
+            </p>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem; line-height: 1.8;">
+            <h2 class="card-title" style="font-size: 1.4rem; color: var(--primary-dark);">The Problem We Are Solving</h2>
+            <p>
+                In urban cities, millions of tons of fresh, nutritious food are discarded after weddings, corporate conferences and restaurant services every evening, while nearby orphanages, old age shelters and vulnerable families struggle for nourishment.
+            </p>
+            <p style="margin-top: 1rem;">
+                FoodShare bridges this logistical and transparency gap through an intelligent web platform that matches surplus providers with verified recipients and community distribution volunteers in real time.
+            </p>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 2.5rem;">
+            <div class="card">
+                <h3 class="card-title">🌱 Core Objectives</h3>
+                <ul style="padding-left: 1.25rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
+                    <li><strong>Reduction of Food Wastage:</strong> Enable instant posting of banquet and restaurant surplus.</li>
+                    <li><strong>Equitable Distribution:</strong> Priority allocation algorithm giving preference to children shelters and senior care homes.</li>
+                    <li><strong>Cryptographic Verification:</strong> One-time collection tokens eliminating fraudulent claims and duplicate pickups.</li>
+                    <li><strong>Volunteer Empowerment:</strong> Facilitating offline food distribution camps and direct vehicle dispatch.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3 class="card-title">🛡️ System Architecture</h3>
+                <ul style="padding-left: 1.25rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
+                    <li><strong>Java & Spring Boot 3.3:</strong> Robust RESTful microservices with transactional integrity.</li>
+                    <li><strong>Database Row-Level Locking:</strong> Pessimistic locking guaranteeing zero overbooking under high traffic.</li>
+                    <li><strong>MySQL Relational Store:</strong> Comprehensive relational audit logs for all distributed meals.</li>
+                    <li><strong>Role-Based Security:</strong> BCrypt encryption and JWT session tokens.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card" style="text-align: center; background: var(--primary-bg); border-color: var(--border-focus); padding: 2.5rem;">
+            <h2 style="color: var(--primary-dark); margin-bottom: 0.5rem;">Ready to make an impact?</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Register today as a donor, recipient or volunteer.</p>
+            <a href="/register.html" class="btn btn-primary btn-lg">Get Started Now</a>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-bottom">
+            &copy; 2026 FoodShare Platform. B.Tech Computer Science Project.
+        </div>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script>
+        FoodShare.renderNav('about');
+    </script>
+</body>
+</html>

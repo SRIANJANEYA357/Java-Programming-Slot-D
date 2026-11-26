@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  foodshare-mysql:
+    image: mysql:8.0
+    container_name: foodshare-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-foodsharedb}
+      MYSQL_USER: ${SPRING_DATASOURCE_USERNAME:-foodshare_prod}
+      MYSQL_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-FoodShareSecureDbPass2026!}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-FoodShareRootPassSecure2026!}
+    volumes:
+      - foodshare-db-data:/var/lib/mysql
+    networks:
+      - foodshare-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${SPRING_DATASOURCE_USERNAME:-foodshare_prod}", "-p${SPRING_DATASOURCE_PASSWORD:-FoodShareSecureDbPass2026!}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  foodshare-prod-app:
+    image: foodshare:1.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: foodshare-prod-app
+    restart: unless-stopped
+    depends_on:
+      foodshare-mysql:
+        condition: service_healthy
+    ports:
+      - "${HOST_PORT:-8088}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://foodshare-mysql:3306/${MYSQL_DATABASE:-foodsharedb}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-foodshare_prod}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-FoodShareSecureDbPass2026!}
+      JWT_SECRET: ${JWT_SECRET:-FoodShareSuperSecretKeyForJwtTokenGeneration2026SecureProductionKeyMustBeVeryLong}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
+      HIBERNATE_DDL_AUTO: ${HIBERNATE_DDL_AUTO:-update}
+    networks:
+      - foodshare-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 25s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+volumes:
+  foodshare-db-data:
+    name: foodshare-db-data
+
+networks:
+  foodshare-net:
+    name: foodshare-net
+    driver: bridge

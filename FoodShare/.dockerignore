@@ -1,0 +1,14 @@
+# Docker build ignore patterns
+.git
+.gitignore
+.dockerignore
+target/*
+!target/*.jar
+*.log
+.vscode/
+.idea/
+*.md
+src/test/
+C:/Users/anji3/Desktop/foodshare-backup
+foodshare-pom.txt
+foodshare-resources.txt

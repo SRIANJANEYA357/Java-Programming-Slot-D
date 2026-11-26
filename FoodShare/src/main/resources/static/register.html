@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container" style="max-width: 580px; margin-top: 2.5rem; margin-bottom: 3rem;">
+        <div class="card" style="box-shadow: var(--shadow-lg);">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div class="brand-icon" style="margin: 0 auto 0.75rem; width: 48px; height: 48px; font-size: 1.5rem;">🌱</div>
+                <h1 style="font-size: 1.75rem; font-weight: 700;">Join FoodShare</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Select your role and create an account</p>
+            </div>
+
+            <form id="register-form">
+                <!-- Role Selector -->
+                <div class="form-group">
+                    <label class="form-label">I want to register as:</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                        <label style="border: 1.5px solid var(--border-color); padding: 0.75rem 0.5rem; border-radius: var(--radius); text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600;" id="role-label-recipient">
+                            <input type="radio" name="role" value="ROLE_RECIPIENT" checked style="display: none;" onchange="updateRoleFields()">
+                            <div>🍲 Recipient</div>
+                        </label>
+                        <label style="border: 1.5px solid var(--border-color); padding: 0.75rem 0.5rem; border-radius: var(--radius); text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600;" id="role-label-provider">
+                            <input type="radio" name="role" value="ROLE_PROVIDER" style="display: none;" onchange="updateRoleFields()">
+                            <div>🏢 Food Provider</div>
+                        </label>
+                        <label style="border: 1.5px solid var(--border-color); padding: 0.75rem 0.5rem; border-radius: var(--radius); text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600;" id="role-label-volunteer">
+                            <input type="radio" name="role" value="ROLE_VOLUNTEER" style="display: none;" onchange="updateRoleFields()">
+                            <div>🤝 Volunteer</div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Provider-specific fields -->
+                <div id="provider-fields" style="display: none; background: var(--primary-bg); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label">Provider Category</label>
+                        <select id="providerType" class="form-control">
+                            <option value="RESTAURANT">Restaurant / Cafe</option>
+                            <option value="MARRIAGE_HALL">Marriage & Banquet Hall</option>
+                            <option value="EVENT_ORGANIZER">Caterer / Event Organizer</option>
+                            <option value="INDIVIDUAL">Individual Donor</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Business / Organization Name</label>
+                        <input type="text" id="organizationName" class="form-control" placeholder="e.g. Royal Grand Banquet">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Full Name / Contact Person</label>
+                    <input type="text" id="fullName" class="form-control" placeholder="Enter your full name" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="email" class="form-control" placeholder="name@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" id="phone" class="form-control" placeholder="e.g. 9876543210" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" id="city" class="form-control" placeholder="e.g. Hyderabad" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address / Locality</label>
+                        <input type="text" id="address" class="form-control" placeholder="Street / Area">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" id="submit-btn">
+                    Create Account
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+                Already have an account? <a href="/login.html" style="font-weight: 600;">Sign in here</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        FoodShare.renderNav('register');
+
+        // Check URL params for preselected role
+        const urlParams = new URLSearchParams(window.location.search);
+        const preRole = urlParams.get('role');
+        if (preRole) {
+            const rad = document.querySelector(`input[name="role"][value="${preRole}"]`);
+            if (rad) rad.checked = true;
+        }
+
+        function updateRoleFields() {
+            const selected = document.querySelector('input[name="role"]:checked').value;
+            const pFields = document.getElementById('provider-fields');
+            pFields.style.display = selected === 'ROLE_PROVIDER' ? 'block' : 'none';
+
+            ['recipient', 'provider', 'volunteer'].forEach(r => {
+                const el = document.getElementById(`role-label-${r}`);
+                el.style.borderColor = 'var(--border-color)';
+                el.style.backgroundColor = 'transparent';
+                el.style.color = 'var(--text-main)';
+            });
+
+            const activeLabel = document.getElementById(`role-label-${selected.toLowerCase().replace('role_', '')}`);
+            if (activeLabel) {
+                activeLabel.style.borderColor = 'var(--primary)';
+                activeLabel.style.backgroundColor = 'var(--primary-bg)';
+                activeLabel.style.color = 'var(--primary-dark)';
+            }
+        }
+        updateRoleFields();
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Creating account...';
+
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const payload = {
+                fullName: document.getElementById('fullName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                password: document.getElementById('password').value,
+                city: document.getElementById('city').value.trim(),
+                address: document.getElementById('address').value.trim(),
+                role: role,
+                providerType: role === 'ROLE_PROVIDER' ? document.getElementById('providerType').value : 'NONE',
+                organizationName: role === 'ROLE_PROVIDER' ? document.getElementById('organizationName').value.trim() : null
+            };
+
+            try {
+                const res = await FoodShare.post('/auth/register', payload);
+                FoodShare.saveAuth(res);
+                FoodShare.showToast('Registration successful! Redirecting...', 'success');
+
+                setTimeout(() => {
+                    if (res.role === 'ROLE_PROVIDER') window.location.href = '/provider-dashboard.html';
+                    else if (res.role === 'ROLE_VOLUNTEER') window.location.href = '/volunteer-dashboard.html';
+                    else window.location.href = '/user-dashboard.html';
+                }, 1000);
+            } catch (err) {
+                FoodShare.showToast(err.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipient Dashboard - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1>Recipient Portal</h1>
+                <p>Welcome back, <span id="user-greeting" style="font-weight: 600; color: var(--primary-dark);">User</span>! Track your requests and collection tokens.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <a href="/available-food.html" class="btn btn-primary">Find Food Listings</a>
+                <a href="/my-requests.html" class="btn btn-outline">All Requests</a>
+            </div>
+        </div>
+
+        <!-- Metric Stat Cards -->
+        <div class="grid-4" style="margin-bottom: 2rem;">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-info">
+                    <h3 id="stat-total-req">0</h3>
+                    <p>Total Requests</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎟️</div>
+                <div class="stat-info">
+                    <h3 id="stat-active-tokens">0</h3>
+                    <p>Active Collection Tokens</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    <h3 id="stat-collected">0</h3>
+                    <p>Meals Collected</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <h3 id="stat-savings">₹0</h3>
+                    <p>Food Cost Saved</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Pickup Tokens Section -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="page-header" style="margin-bottom: 1rem;">
+                <div>
+                    <h2 class="card-title" style="margin-bottom: 0.2rem;">🎟️ Ready for Pickup (Active Tokens)</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Present these tokens at the provider location to receive your food.</p>
+                </div>
+            </div>
+
+            <div id="active-tokens-container" class="grid-3">
+                <p style="color: var(--text-muted);">Checking active collection tokens...</p>
+            </div>
+        </div>
+
+        <!-- Recent Food Requests Table -->
+        <div class="card">
+            <div class="page-header" style="margin-bottom: 1rem;">
+                <div>
+                    <h2 class="card-title" style="margin-bottom: 0.2rem;">Recent Requests</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">History of your recent food claims and statuses</p>
+                </div>
+                <a href="/my-requests.html" style="font-size: 0.9rem; font-weight: 600;">View All Requests →</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Listing</th>
+                            <th>Quantity</th>
+                            <th>Total Price</th>
+                            <th>Status</th>
+                            <th>Token</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-requests-tbody">
+                        <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        if (!FoodShare.isAuthenticated()) {
+            window.location.href = '/login.html';
+        }
+
+        FoodShare.renderNav('dashboard');
+        const user = FoodShare.getUser();
+        if (user) document.getElementById('user-greeting').textContent = user.fullName;
+
+        async function loadDashboard() {
+            try {
+                const requests = await FoodShare.get('/requests/my');
+                
+                // Stats
+                let totalReq = requests.length;
+                let activeTokens = 0;
+                let collectedCount = 0;
+                let savedCost = 0;
+
+                const activeTokenCards = [];
+                const tableRows = [];
+
+                requests.forEach(r => {
+                    if (r.requestStatus === 'CONFIRMED' && r.tokenCode) {
+                        activeTokens++;
+                        activeTokenCards.push(`
+                            <div class="card" style="border: 1.5px solid var(--border-focus); background: var(--primary-bg);">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                                    <span class="tag tag-free">CONFIRMED</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">${FoodShare.formatDate(r.createdAt)}</span>
+                                </div>
+                                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem;">${FoodShare.escapeHtml(r.listingTitle)}</h3>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                                    Quantity: <strong>${r.quantityRequested} ${FoodShare.escapeHtml(r.unit)}</strong> • Location: ${FoodShare.escapeHtml(r.locationCity)}
+                                </p>
+                                <div style="background: white; border: 2px dashed var(--primary); padding: 0.75rem; border-radius: var(--radius); text-align: center; margin-bottom: 0.75rem;">
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">COLLECTION TOKEN</div>
+                                    <div style="font-family: monospace; font-size: 1.4rem; font-weight: 800; color: var(--primary-dark);">${FoodShare.escapeHtml(r.tokenCode)}</div>
+                                </div>
+                                <a href="/collection-token.html?code=${encodeURIComponent(r.tokenCode || '')}" class="btn btn-primary btn-sm" style="width: 100%;">View Full Token Details</a>
+                            </div>
+                        `);
+                    }
+
+                    if (r.requestStatus === 'COLLECTED') {
+                        collectedCount += r.quantityRequested;
+                    }
+
+                    let statusBadge = '<span class="badge badge-warning">PENDING</span>';
+                    if (r.requestStatus === 'CONFIRMED') statusBadge = '<span class="badge badge-success">CONFIRMED</span>';
+                    else if (r.requestStatus === 'COLLECTED') statusBadge = '<span class="badge badge-info">COLLECTED</span>';
+                    else if (r.requestStatus === 'CANCELLED') statusBadge = '<span class="badge badge-neutral">CANCELLED</span>';
+
+                    tableRows.push(`
+                        <tr>
+                            <td><strong>${FoodShare.escapeHtml(r.listingTitle)}</strong></td>
+                            <td>${r.quantityRequested} ${FoodShare.escapeHtml(r.unit)}</td>
+                            <td>${FoodShare.formatCurrency(r.totalPrice)}</td>
+                            <td>${statusBadge}</td>
+                            <td>${r.tokenCode ? `<a href="/collection-token.html?code=${encodeURIComponent(r.tokenCode)}" style="font-family:monospace; font-weight:700;">${FoodShare.escapeHtml(r.tokenCode)}</a>` : '—'}</td>
+                            <td>${FoodShare.formatDate(r.createdAt)}</td>
+                            <td>
+                                ${r.requestStatus === 'CONFIRMED' ? `<button onclick="cancelReq(${r.id})" class="btn btn-danger btn-sm">Cancel</button>` : '—'}
+                            </td>
+                        </tr>
+                    `);
+                });
+
+                document.getElementById('stat-total-req').textContent = totalReq;
+                document.getElementById('stat-active-tokens').textContent = activeTokens;
+                document.getElementById('stat-collected').textContent = collectedCount;
+                document.getElementById('stat-savings').textContent = `₹${collectedCount * 120}`;
+
+                const tokenContainer = document.getElementById('active-tokens-container');
+                if (activeTokenCards.length > 0) {
+                    tokenContainer.innerHTML = activeTokenCards.join('');
+                } else {
+                    tokenContainer.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1;">No active pickup tokens. Browse listings to request food!</p>';
+                }
+
+                const tbody = document.getElementById('recent-requests-tbody');
+                if (tableRows.length > 0) {
+                    tbody.innerHTML = tableRows.slice(0, 5).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No requests found.</td></tr>';
+                }
+
+            } catch (err) {
+                console.error(err);
+                FoodShare.showToast(err.message, 'error');
+            }
+        }
+
+        async function cancelReq(reqId) {
+            if (!confirm('Are you sure you want to cancel this food request? The quantity will be returned to the provider inventory.')) return;
+            try {
+                await FoodShare.delete(`/requests/${reqId}`);
+                FoodShare.showToast('Request cancelled successfully. Quantity returned to inventory.', 'success');
+                loadDashboard();
+            } catch (err) {
+                FoodShare.showToast(err.message, 'error');
+            }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .role-admin { background-color: #fee2e2; color: #991b1b; }
+        .role-provider { background-color: #dbeafe; color: #1e40af; }
+        .role-volunteer { background-color: #fef3c7; color: #92400e; }
+        .role-recipient { background-color: #dcfce7; color: #166534; }
+        .action-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .filter-controls {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            flex: 1;
+            max-width: 650px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container" style="margin-top: 1.5rem; margin-bottom: 3rem;">
+        <div class="page-header">
+            <div>
+                <h1>Platform Administration</h1>
+                <p>Manage user accounts, assign roles, and oversee community platform participation.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button onclick="loadUsers()" class="btn btn-primary" id="refresh-btn">↻ Refresh Users</button>
+                <a href="/distribution-history.html" class="btn btn-outline">Impact & History</a>
+            </div>
+        </div>
+
+        <!-- Metric Stat Cards -->
+        <div class="grid-4" style="margin-bottom: 2rem;">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                    <h3 id="stat-total-users">0</h3>
+                    <p>Total Registered Accounts</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🍲</div>
+                <div class="stat-info">
+                    <h3 id="stat-recipients">0</h3>
+                    <p>Recipients</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏬</div>
+                <div class="stat-info">
+                    <h3 id="stat-providers">0</h3>
+                    <p>Food Providers</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🤝</div>
+                <div class="stat-info">
+                    <h3 id="stat-volunteers">0</h3>
+                    <p>Volunteers & Admins</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Permissions & Policy Card -->
+        <div class="card" style="background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); margin-bottom: 2rem; border-color: var(--border-focus);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h3 style="color: var(--primary-dark); margin-bottom: 0.35rem; font-size: 1.1rem;">🛡️ Role Management & Security Governance</h3>
+                    <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">
+                        Public registration is limited to Recipients and Providers. Only administrators can assign Volunteer privileges or reassign account roles. Self-modification of your active administrator account is restricted to preserve governance access.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Accounts Management Table -->
+        <div class="card">
+            <div class="page-header" style="margin-bottom: 1.25rem;">
+                <div>
+                    <h2 class="card-title" style="margin-bottom: 0.2rem;">Registered User Accounts</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time directory of all platform participants and role configurations</p>
+                </div>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="filter-bar">
+                <div class="filter-controls">
+                    <input type="text" id="search-input" class="form-control" placeholder="Search by name, email, phone, city, or organization..." style="flex: 2; min-width: 220px;">
+                    <select id="role-filter" class="form-control" style="flex: 1; min-width: 150px;">
+                        <option value="ALL">All Roles</option>
+                        <option value="ROLE_RECIPIENT">Recipients</option>
+                        <option value="ROLE_PROVIDER">Providers</option>
+                        <option value="ROLE_VOLUNTEER">Volunteers</option>
+                        <option value="ROLE_ADMIN">Administrators</option>
+                    </select>
+                </div>
+                <div id="results-count" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
+                    Showing 0 accounts
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">ID</th>
+                            <th>Participant / Contact</th>
+                            <th>Location</th>
+                            <th>Organization / Details</th>
+                            <th>Current Role</th>
+                            <th>Registered</th>
+                            <th style="min-width: 220px;">Assign Role</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading user accounts...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Authentication Guard
+        if (!FoodShare.isAuthenticated()) {
+            window.location.href = '/login.html';
+        }
+
+        const currentUser = FoodShare.getUser();
+        if (!currentUser || currentUser.role !== 'ROLE_ADMIN') {
+            FoodShare.showToast('Access restricted to administrators.', 'error');
+            setTimeout(() => {
+                window.location.href = '/index.html';
+            }, 1000);
+        }
+
+        FoodShare.renderNav('dashboard');
+
+        let allUsers = [];
+
+        function getRoleBadge(role) {
+            switch (role) {
+                case 'ROLE_ADMIN':
+                    return '<span class="role-badge role-admin">Admin</span>';
+                case 'ROLE_PROVIDER':
+                    return '<span class="role-badge role-provider">Provider</span>';
+                case 'ROLE_VOLUNTEER':
+                    return '<span class="role-badge role-volunteer">Volunteer</span>';
+                case 'ROLE_RECIPIENT':
+                    return '<span class="role-badge role-recipient">Recipient</span>';
+                default:
+                    return `<span class="role-badge">${FoodShare.escapeHtml(role || 'Unknown')}</span>`;
+            }
+        }
+
+        async function loadUsers() {
+            const tbody = document.getElementById('users-tbody');
+            const refreshBtn = document.getElementById('refresh-btn');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading user accounts...</td></tr>';
+            if (refreshBtn) refreshBtn.disabled = true;
+
+            try {
+                allUsers = await FoodShare.get('/users');
+
+                // Compute metric stats
+                const total = allUsers.length;
+                const recipients = allUsers.filter(u => u.role === 'ROLE_RECIPIENT').length;
+                const providers = allUsers.filter(u => u.role === 'ROLE_PROVIDER').length;
+                const volunteersAndAdmins = allUsers.filter(u => u.role === 'ROLE_VOLUNTEER' || u.role === 'ROLE_ADMIN').length;
+
+                document.getElementById('stat-total-users').textContent = total;
+                document.getElementById('stat-recipients').textContent = recipients;
+                document.getElementById('stat-providers').textContent = providers;
+                document.getElementById('stat-volunteers').textContent = volunteersAndAdmins;
+
+                renderTable();
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--danger); padding:2rem;">✕ Failed to load users: ${FoodShare.escapeHtml(err.message)}</td></tr>`;
+                FoodShare.showToast(err.message, 'error');
+            } finally {
+                if (refreshBtn) refreshBtn.disabled = false;
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('users-tbody');
+            const searchTerm = (document.getElementById('search-input').value || '').trim().toLowerCase();
+            const roleFilter = document.getElementById('role-filter').value;
+
+            const filtered = allUsers.filter(u => {
+                if (roleFilter !== 'ALL' && u.role !== roleFilter) return false;
+                if (!searchTerm) return true;
+
+                const idStr = String(u.id || '');
+                const nameStr = (u.fullName || '').toLowerCase();
+                const emailStr = (u.email || '').toLowerCase();
+                const phoneStr = (u.phone || '').toLowerCase();
+                const cityStr = (u.city || '').toLowerCase();
+                const orgStr = (u.organizationName || '').toLowerCase();
+
+                return idStr.includes(searchTerm) ||
+                       nameStr.includes(searchTerm) ||
+                       emailStr.includes(searchTerm) ||
+                       phoneStr.includes(searchTerm) ||
+                       cityStr.includes(searchTerm) ||
+                       orgStr.includes(searchTerm);
+            });
+
+            document.getElementById('results-count').textContent = `Showing ${filtered.length} of ${allUsers.length} accounts`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">No matching user accounts found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(u => {
+                const isSelf = currentUser && currentUser.email && currentUser.email.toLowerCase() === (u.email || '').toLowerCase();
+                const roleBadge = getRoleBadge(u.role);
+                const regDate = u.createdAt ? FoodShare.formatDate(u.createdAt) : '—';
+                const orgInfo = u.organizationName 
+                    ? `<strong>${FoodShare.escapeHtml(u.organizationName)}</strong>${u.providerType ? `<div style="font-size:0.75rem; color:var(--text-muted);">${FoodShare.escapeHtml(u.providerType.replace('_', ' '))}</div>` : ''}`
+                    : '<span style="color:var(--text-muted);">Individual</span>';
+
+                let actionHtml = '';
+                if (isSelf) {
+                    actionHtml = '<span style="font-size:0.8rem; color:var(--text-muted); font-style:italic;">Current Account (Self)</span>';
+                } else if (u.role === 'ROLE_ADMIN') {
+                    actionHtml = '<span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">Administrator</span>';
+                } else {
+                    actionHtml = `
+                        <div class="action-cell">
+                            <select id="role-select-${u.id}" class="form-control form-control-sm" style="font-size:0.8rem; padding:0.25rem 0.5rem; width:130px;">
+                                <option value="ROLE_RECIPIENT" ${u.role === 'ROLE_RECIPIENT' ? 'selected' : ''}>Recipient</option>
+                                <option value="ROLE_PROVIDER" ${u.role === 'ROLE_PROVIDER' ? 'selected' : ''}>Provider</option>
+                                <option value="ROLE_VOLUNTEER" ${u.role === 'ROLE_VOLUNTEER' ? 'selected' : ''}>Volunteer</option>
+                            </select>
+                            <button onclick="handleRoleUpdate(${u.id}, '${FoodShare.escapeHtml(u.fullName)}')" class="btn btn-sm btn-secondary" id="role-btn-${u.id}">Apply</button>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <tr>
+                        <td style="font-weight:600; color:var(--text-muted);">${u.id}</td>
+                        <td>
+                            <strong>${FoodShare.escapeHtml(u.fullName)}</strong>
+                            <div style="font-size:0.8rem; color:var(--text-muted);">${FoodShare.escapeHtml(u.email)}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">📞 ${FoodShare.escapeHtml(u.phone || '—')}</div>
+                        </td>
+                        <td>
+                            <strong>${FoodShare.escapeHtml(u.city || '—')}</strong>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">${FoodShare.escapeHtml(u.address || '')}</div>
+                        </td>
+                        <td>${orgInfo}</td>
+                        <td>${roleBadge}</td>
+                        <td style="font-size:0.85rem; color:var(--text-muted);">${regDate}</td>
+                        <td>${actionHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function handleRoleUpdate(userId, userName) {
+            const select = document.getElementById(`role-select-${userId}`);
+            const btn = document.getElementById(`role-btn-${userId}`);
+            if (!select || !btn) return;
+
+            const selectedRole = select.value;
+            const roleName = selectedRole.replace('ROLE_', '');
+
+            if (!confirm(`Are you sure you want to change the role of "${userName}" to ${roleName}?`)) {
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                await FoodShare.put(`/users/${userId}/role?role=${encodeURIComponent(selectedRole)}`);
+                FoodShare.showToast(`Updated role for ${userName} to ${roleName}.`, 'success');
+                await loadUsers();
+            } catch (err) {
+                console.error(err);
+                FoodShare.showToast(err.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Apply';
+            }
+        }
+
+        document.getElementById('search-input').addEventListener('input', renderTable);
+        document.getElementById('role-filter').addEventListener('change', renderTable);
+
+        loadUsers();
+    </script>
+</body>
+</html>

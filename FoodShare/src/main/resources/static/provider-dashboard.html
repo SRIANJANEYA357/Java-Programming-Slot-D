@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Dashboard - FoodShare</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar"></nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1>Food Provider Dashboard</h1>
+                <p>Manage surplus food listings, incoming requests and verify recipient tokens.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <a href="/add-listing.html" class="btn btn-primary">+ Add New Food Listing</a>
+                <a href="/token-verification.html" class="btn btn-outline">Verify Token</a>
+            </div>
+        </div>
+
+        <!-- Metric Stat Cards -->
+        <div class="grid-4" style="margin-bottom: 2rem;">
+            <div class="stat-card">
+                <div class="stat-icon">📢</div>
+                <div class="stat-info">
+                    <h3 id="stat-listings">0</h3>
+                    <p>Total Listings</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🍲</div>
+                <div class="stat-info">
+                    <h3 id="stat-meals-donated">0</h3>
+                    <p>Units Donated / Listed</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📥</div>
+                <div class="stat-info">
+                    <h3 id="stat-incoming-req">0</h3>
+                    <p>Confirmed Claims</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-info">
+                    <h3 id="stat-completed">0</h3>
+                    <p>Completed Collections</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Token Verification Box -->
+        <div class="card" style="background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); margin-bottom: 2rem; border-color: var(--border-focus);">
+            <div class="grid-2" style="align-items: center;">
+                <div>
+                    <h2 class="card-title" style="color: var(--primary-dark); margin-bottom: 0.35rem;">⚡ Quick Token Check & Redeem</h2>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);">
+                        When a recipient arrives for collection, enter their 8-character token code here to verify and complete the handover.
+                    </p>
+                </div>
+                <div>
+                    <form id="quick-verify-form" style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="quick-token-input" class="form-control" placeholder="e.g. FS-ABCD-1234" style="font-family: monospace; font-size: 1.1rem; text-transform: uppercase;" required>
+                        <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Verify & Redeem</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Food Listings -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="page-header" style="margin-bottom: 1rem;">
+                <div>
+                    <h2 class="card-title" style="margin-bottom: 0.2rem;">My Surplus Food Listings</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time inventory of your posted donations and sales</p>
+                </div>
+                <a href="/add-listing.html" class="btn btn-sm btn-primary">+ New Listing</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Listing Title</th>
+                            <th>Category</th>
+                            <th>Type</th>
+                            <th>Original Qty</th>
+                            <th>Remaining Qty</th>
+                            <th>Expiry</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="provider-listings-tbody">
+                        <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading your listings...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Incoming Claims Table -->
+        <div class="card">
+            <div class="page-header" style="margin-bottom: 1rem;">
+                <div>
+                    <h2 class="card-title" style="margin-bottom: 0.2rem;">Incoming Food Claims & Collections</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Recipients who have claimed portions of your listings</p>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Recipient</th>
+                            <th>Contact</th>
+                            <th>Food Item</th>
+                            <th>Quantity</th>
+                            <th>Priority Category</th>
+                            <th>Token Code</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="provider-claims-tbody">
+                        <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading claims...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        if (!FoodShare.isAuthenticated()) {
+            window.location.href = '/login.html';
+        }
+
+        FoodShare.renderNav('dashboard');
+
+        async function loadProviderData() {
+            try {
+                const listings = await FoodShare.get('/listings/my');
+                const claims = await FoodShare.get('/requests/provider');
+
+                // Compute stats
+                document.getElementById('stat-listings').textContent = listings.length;
+                let totalUnits = listings.reduce((acc, l) => acc + l.originalQuantity, 0);
+                document.getElementById('stat-meals-donated').textContent = totalUnits;
+                document.getElementById('stat-incoming-req').textContent = claims.length;
+                let completed = claims.filter(c => c.requestStatus === 'COLLECTED').length;
+                document.getElementById('stat-completed').textContent = completed;
+
+                // Render Listings
+                const listingsTbody = document.getElementById('provider-listings-tbody');
+                if (listings.length > 0) {
+                    listingsTbody.innerHTML = listings.map(l => {
+                        let statusBadge = '<span class="badge badge-success">AVAILABLE</span>';
+                        if (l.status === 'DEPLETED') statusBadge = '<span class="badge badge-neutral">DEPLETED</span>';
+                        else if (l.status === 'EXPIRED') statusBadge = '<span class="badge badge-danger">EXPIRED</span>';
+                        else if (l.status === 'CANCELLED') statusBadge = '<span class="badge badge-neutral">CANCELLED</span>';
+
+                        return `
+                            <tr>
+                                <td>
+                                    <strong>${FoodShare.escapeHtml(l.title)}</strong>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">${FoodShare.escapeHtml(l.locationAddress)}</div>
+                                </td>
+                                <td><span class="tag tag-category">${FoodShare.escapeHtml(l.category ? l.category.replace('_', ' ') : '')}</span></td>
+                                <td>
+                                    <span class="tag ${l.foodType === 'FREE_DONATION' ? 'tag-free' : 'tag-discount'}">
+                                        ${l.foodType === 'FREE_DONATION' ? 'FREE' : `₹${l.discountedPrice}`}
+                                    </span>
+                                </td>
+                                <td>${l.originalQuantity} ${FoodShare.escapeHtml(l.unit)}</td>
+                                <td><strong>${l.remainingQuantity}</strong> ${FoodShare.escapeHtml(l.unit)}</td>
+                                <td>${FoodShare.formatDate(l.expiryTime)}</td>
+                                <td>${statusBadge}</td>
+                                <td>
+                                    ${l.status === 'AVAILABLE' ? `
+                                        <button onclick="cancelListing(${l.id})" class="btn btn-sm btn-danger">Cancel</button>
+                                    ` : '—'}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    listingsTbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">You have not created any food listings yet.</td></tr>';
+                }
+
+                // Render Claims
+                const claimsTbody = document.getElementById('provider-claims-tbody');
+                if (claims.length > 0) {
+                    claimsTbody.innerHTML = claims.map(c => {
+                        let statusBadge = '<span class="badge badge-success">CONFIRMED</span>';
+                        if (c.requestStatus === 'COLLECTED') statusBadge = '<span class="badge badge-info">COLLECTED</span>';
+                        else if (c.requestStatus === 'CANCELLED') statusBadge = '<span class="badge badge-neutral">CANCELLED</span>';
+
+                        return `
+                            <tr>
+                                <td><strong>${FoodShare.escapeHtml(c.recipientName)}</strong></td>
+                                <td>${FoodShare.escapeHtml(c.recipientPhone)}</td>
+                                <td>${FoodShare.escapeHtml(c.listingTitle)}</td>
+                                <td><strong>${c.quantityRequested}</strong> ${FoodShare.escapeHtml(c.unit)}</td>
+                                <td>
+                                    <span class="tag ${c.priorityCategory === 'CHILDREN' || c.priorityCategory === 'ELDERLY' ? 'tag-free' : 'tag-category'}">
+                                        ${FoodShare.escapeHtml(c.priorityCategory)}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="/token-verification.html?code=${encodeURIComponent(c.tokenCode || '')}" style="font-family:monospace; font-weight:700;">
+                                        ${FoodShare.escapeHtml(c.tokenCode || '—')}
+                                    </a>
+                                </td>
+                                <td>${statusBadge}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    claimsTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No claims received yet.</td></tr>';
+                }
+
+            } catch (err) {
+                console.error(err);
+                FoodShare.showToast(err.message, 'error');
+            }
+        }
+
+        async function cancelListing(id) {
+            if (!confirm('Are you sure you want to cancel this food listing?')) return;
+            try {
+                await FoodShare.delete(`/listings/${id}`);
+                FoodShare.showToast('Listing cancelled.', 'success');
+                loadProviderData();
+            } catch (err) {
+                FoodShare.showToast(err.message, 'error');
+            }
+        }
+
+        document.getElementById('quick-verify-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const code = document.getElementById('quick-token-input').value.trim();
+            if (code) {
+                window.location.href = `/token-verification.html?code=${encodeURIComponent(code)}`;
+            }
+        });
+
+        loadProviderData();
+    </script>
+</body>
+</html>
